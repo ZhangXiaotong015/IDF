@@ -68,7 +68,7 @@ lightning:
       params:
        save_dir : logs/
        name: LocalImageLogger
-       version: name               # Replace with experiment identifier.
+       version: unpaired_jpeg               # Replace with experiment identifier.
 
     # Additional logger options (uncomment preferred):
     # - target: models.loggers.TensorBoardLogger
