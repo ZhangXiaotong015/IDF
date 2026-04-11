@@ -2,7 +2,7 @@ from typing import Mapping, Any
 import torch
 from idf.utils.common import instantiate_from_config
 from idf.utils.metrics import calculate_psnr_pt, calculate_ssim_pt
-from torchvision.transforms.functional import center_crop
+# from torchvision.transforms.functional import center_crop
 from idf.models.lit_denoising import LitDenoising
 from idf.utils.misc import const_like
 import numpy as np
@@ -108,6 +108,7 @@ class LitADenoising(LitDenoising):
         self.log_dict(losses, sync_dist=True, prog_bar=True, add_dataloader_idx=False)
         
         if batch_idx % 500 == 0:
-            self.sampled_images.append(center_crop(x, (256,256))[0].cpu())
-            self.sampled_images.append(center_crop(y, (256,256))[0].cpu())
-            self.sampled_images.append(center_crop(pred, (256,256))[0].cpu())
+            self.sampled_images.append(x[0].cpu())
+            self.sampled_images.append(y[0].cpu())
+            self.sampled_images.append(pred[0].cpu())
+

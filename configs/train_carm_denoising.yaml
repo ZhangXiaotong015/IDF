@@ -1,0 +1,87 @@
+data:
+  target: idf.datasets.data_module.BaseDataModule
+  params:
+    # Path to training dataset configuration.
+    train_config: configs/datasets/train/carm_train_unpaired.yaml
+
+    # List of validation dataset configuration files. Add or remove as needed.
+    # Match entries in data_config/validate of configs/models/idfnet.yaml
+    val_config: [
+      configs/datasets/test/carm_val_unpaired.yaml,
+    ]
+
+    # Additional real-world validation datasets (uncomment to enable):
+    # [
+    #  'configs/datasets/test/sidd.yaml',
+    #  'configs/datasets/test/siddplus.yaml',
+    #  'configs/datasets/test/polyu.yaml',
+    #  'configs/datasets/test/nam.yaml',
+    #  'configs/datasets/test/mc.yaml',
+    # ]
+
+model:
+  # Path to model (architecture + optimization) configuration.
+  config: configs/models/idfnet.yaml
+
+  # Path to checkpoint for resuming training. Use ~ for fresh start.
+  resume: ~
+
+lightning:
+  seed: ~
+  mode: fit
+  # MatMul precision override (options: 'medium' | 'high' | 'highest' | ~ for default backend behavior).
+  matmul_precision: ~
+  
+  trainer:
+    accelerator: auto              # Automatically select CPU / GPU / MPS.
+    precision: 32                  # Numerical precision: 32 | 16-mixed | bf16-mixed.
+    devices: [0]                   # GPU indices to use.
+    default_root_dir:              # Root directory for logs & checkpoints.
+    max_steps: 50001               # Total optimization steps.
+    val_check_interval: 10       # Run validation every N training steps.
+    check_val_every_n_epoch: ~     # Use only if doing epoch-based validation.
+    log_every_n_steps: 10 #500         # Logging frequency.
+    # strategy: "ddp_find_unused_parameters_true"  # Uncomment for multi-GPU w/ potential unused params.
+    gradient_clip_val: 0.1         # Gradient norm clipping threshold.
+    num_sanity_val_steps: 2        # Quick validation sanity check before training.
+  
+  callbacks:
+    ## Checkpointing callback (uncomment to enable):
+    # - target: pytorch_lightning.callbacks.ModelCheckpoint 
+    #   params: 
+    #     every_n_train_steps: 20000   # Save every N training steps.
+    #     # save_top_k: 1              # Keep top-k checkpoints (set -1 for all).
+    #     save_last: True              # Always retain the last checkpoint.
+    #     filename: '{epoch}-{step}'
+    #     verbose: True
+
+    - target: pytorch_lightning.callbacks.LearningRateMonitor
+      params:
+        logging_interval: 'step'
+        
+    # - target: pytorch_lightning.callbacks.RichProgressBar
+    #   params:
+    #     leave: False
+
+  loggers:
+    - target: idf.models.loggers.LocalImageLogger
+      params:
+       save_dir : logs/
+       name: LocalImageLogger
+       version: name               # Replace with experiment identifier.
+
+    # Additional logger options (uncomment preferred):
+    # - target: models.loggers.TensorBoardLogger
+    #   params:
+    #     save_dir : logs/
+    #     version: name
+
+    # - target: pytorch_lightning.loggers.WandbLogger
+    #   params:
+    #     name: name                 # Run name.
+    #     save_dir : logs/
+    #     log_model: all             # Options: all | True | False.
+    #     entity: entity             # Your W&B entity / team.
+    #     project: project           # Project name on W&B.
+    #     tags: ["tags"]             # List of tag strings.
+    #     notes: notes               # Free-form notes.

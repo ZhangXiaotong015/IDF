@@ -1,0 +1,30 @@
+# Gaussian noise training dataset configuration.
+
+dataset:
+  target: idf.datasets.carm_dataset.CFM_train   # Dataset class.
+  params:
+    dataroot: dataset_root_path/train/CBSD432 ##########    # Root directory of clean training images.
+    lq_folder: low
+    gt_folder: high
+    
+    patch_size: 128                               # Spatial crop size (square patches: patch_size x patch_size).
+    augmentation: True                            # Apply on-the-fly geometric augmentations.
+    test: False                                   # Set True to disable training-only randomizations.
+
+    preload: False                                # If True, preload all images into RAM at initialization.
+    parallel_preload: False                       # If True and preload=True, use multiprocessing for faster preload.
+
+data_loader:
+  batch_size: 8
+  shuffle: true
+  num_workers: 16
+  drop_last: true
+  pin_memory: true
+  prefetch_factor: 4
+  persistent_workers: true
+
+repeat_dataset:
+  times: 10000 ##########
+
+batch_transform:
+  target: idf.datasets.batch_transform.IdentityBatchTransform

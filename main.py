@@ -73,7 +73,7 @@ def main() -> None:
              }}
         )
         loggers.append(debug_logger)
-        config.lightning.trainer.val_check_interval = 10000
+        # config.lightning.trainer.val_check_interval = 10000
         data_module.train_config.dataset.params.preload = False
         if type(data_module.val_config) == list:
             for vc in data_module.val_config:

@@ -6,7 +6,7 @@ params:
 
     # IDF inference options
     adaptive_iteration: False  # If true, enable early halting based on kernel change metric (see halt_threshold in model).
-    max_iteration: ~           # Upper bound denoising iteration during inference (default = 10).
+    max_iteration: 10           # Upper bound denoising iteration during inference (default = 10).
 
   data_config:
     train:
