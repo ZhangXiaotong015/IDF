@@ -32,7 +32,5 @@ RUN conda run -n idf pip install -r /scratch/IDF/requirements.txt
 # Copy project code
 COPY . /scratch/IDF
 
-# Install idf in editable mode
-RUN conda run -n idf pip install -e .
 
 CMD ["bash"]
