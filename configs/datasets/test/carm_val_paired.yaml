@@ -1,0 +1,26 @@
+dataset:
+  target: idf.datasets.carm_dataset.CFM_valid_paired   # Dataset class handling paired GT / LQ folders.
+  params:
+    dataroot: /data/dicom_for_comparing_png    # Root directory containing subfolders for GT and LQ images.
+
+    lq_folder: low                           # Folder name for low-quality (noisy) images.
+    gt_folder: high                                 # Folder name for ground-truth clean images.
+
+    patch_size: null                                   # Use full-resolution images; set integer to enable center/random cropping.
+    augmentation: False                              # Keep deterministic evaluation (no augmentation during test).
+    test: True                                       # Disable training-only randomizations.
+
+    preload: False                                   # If True, load all images into memory at initialization.
+    parallel_preload: False                          # If True and preload=True, use multiprocessing for faster load.
+
+data_loader:
+  batch_size: 1
+  shuffle: true
+  num_workers: 8
+  drop_last: false
+  pin_memory: true
+  prefetch_factor: 4
+  persistent_workers: true
+
+batch_transform:
+  target: idf.datasets.batch_transform.IdentityBatchTransform

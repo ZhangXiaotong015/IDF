@@ -42,7 +42,7 @@ class LitADenoising(LitDenoising):
     def forward(self, noisy, adaptive_iter=False, max_iter=None, alpha_schedule=None):
         x = self.normalize(noisy)
         pred = self.model(x, adaptive_iter=adaptive_iter, max_iter=max_iter, alpha_schedule=alpha_schedule)
-        pred = self.normalize(pred, reverse=True)
+        pred = self.normalize(pred, reverse=True) 
         return pred
         
     def normalize(self, x, reverse=False):
@@ -74,7 +74,9 @@ class LitADenoising(LitDenoising):
         self.log('lr', self.get_lr(), prog_bar=True, logger=False)
 
         losses = dict()
+
         pred = self.model(x)
+
         losses['train/loss'] = self.loss(pred, y)
         losses['train/total'] = sum(losses.values())
         self.log_dict(losses, prog_bar=True)
@@ -99,7 +101,7 @@ class LitADenoising(LitDenoising):
                     alpha_schedule=self.misc_config.get('alpha_schedule'))
         
         pred = torch.clamp(pred, 0.0, 1.0)
-        
+
         # Evaluate metrics.
         losses = {}
         losses[f'val{suffix}/psnr'] = calculate_psnr_pt(y, pred, 0, test_y_channel=False).mean()

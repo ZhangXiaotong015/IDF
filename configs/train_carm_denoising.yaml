@@ -7,8 +7,10 @@ data:
     # List of validation dataset configuration files. Add or remove as needed.
     # Match entries in data_config/validate of configs/models/idfnet.yaml
     val_config: [
-      configs/datasets/test/carm_val_unpaired.yaml,
+#      configs/datasets/test/carm_val_unpaired.yaml,
+      configs/datasets/test/carm_val_paired.yaml,
     ]
+
 
     # Additional real-world validation datasets (uncomment to enable):
     # [
@@ -37,10 +39,10 @@ lightning:
     precision: 32                  # Numerical precision: 32 | 16-mixed | bf16-mixed.
     devices: [0]                   # GPU indices to use.
     default_root_dir:              # Root directory for logs & checkpoints.
-    max_steps: 50001               # Total optimization steps.
-    val_check_interval: 10       # Run validation every N training steps.
+    max_steps: 100001               # Total optimization steps.
+    val_check_interval: 2000       # Run validation every N training steps.
     check_val_every_n_epoch: ~     # Use only if doing epoch-based validation.
-    log_every_n_steps: 10 #500         # Logging frequency.
+    log_every_n_steps: 200         # Logging frequency.
     # strategy: "ddp_find_unused_parameters_true"  # Uncomment for multi-GPU w/ potential unused params.
     gradient_clip_val: 0.1         # Gradient norm clipping threshold.
     num_sanity_val_steps: 2        # Quick validation sanity check before training.
@@ -68,7 +70,7 @@ lightning:
       params:
        save_dir : logs/
        name: LocalImageLogger
-       version: unpaired_jpeg               # Replace with experiment identifier.
+       version: unpaired_jpeg_validateOnPaired               # Replace with experiment identifier.
 
     # Additional logger options (uncomment preferred):
     # - target: models.loggers.TensorBoardLogger

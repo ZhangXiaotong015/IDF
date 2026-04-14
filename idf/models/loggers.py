@@ -11,6 +11,11 @@ from lightning.fabric.utilities.types import _PATH
 import torch
 import numpy as np
 
+import csv
+from omegaconf import OmegaConf
+import json
+from pathlib import Path
+
 __all__ = [
     "TensorBoardLogger",
     "WandbLogger",
@@ -92,15 +97,31 @@ class LocalImageLogger(Logger):
         return self
 
     def log_image(self, name, image, step=None):
-        if type(image) == torch.Tensor:
-            # Convert tensor to PIL Image and save
-            image = Image.fromarray((image*255).permute(1, 2, 0).byte().cpu().numpy())
-            image.save(Path(self.log_dir) / fr"{name}_{step}.png")
-        elif type(image) == np.ndarray:
+        # if type(image) == torch.Tensor:
+        #     # Convert tensor to PIL Image and save
+        #     image = Image.fromarray((image*255).permute(1, 2, 0).byte().cpu().numpy())
+        #     image.save(Path(self.log_dir) / fr"{name}_{step}.png")
+        # elif type(image) == np.ndarray:
+        #     image = Image.fromarray(np.uint8(image * 255).transpose(1, 2, 0))
+        #     image.save(Path(self.log_dir) / fr"{name}_{step}.png")
+        # elif type(image) == Image.Image:
+        #     image.save(Path(self.log_dir) / fr"{name}_{step}.png")
+        # else:
+        #     raise NotImplementedError()
+
+        # 创建 sampled_images 子目录
+        img_dir = Path(self.log_dir) / "sampled_images"
+        img_dir.mkdir(parents=True, exist_ok=True)
+
+        if isinstance(image, torch.Tensor):
+            # Tensor 转换为 PIL Image
+            image = Image.fromarray((image * 255).permute(1, 2, 0).byte().cpu().numpy())
+            image.save(img_dir / f"{name}_step_{step}.png")
+        elif isinstance(image, np.ndarray):
             image = Image.fromarray(np.uint8(image * 255).transpose(1, 2, 0))
-            image.save(Path(self.log_dir) / fr"{name}_{step}.png")
-        elif type(image) == Image.Image:
-            image.save(Path(self.log_dir) / fr"{name}_{step}.png")
+            image.save(img_dir / f"{name}_step_{step}.png")
+        elif isinstance(image, Image.Image):
+            image.save(img_dir / f"{name}_step_{step}.png")
         else:
             raise NotImplementedError()
 
@@ -110,4 +131,20 @@ class LocalImageLogger(Logger):
 
     @rank_zero_only
     def log_metrics(self, metrics, step):
-        pass
+        # pass
+        # 创建 metrics 子目录
+        metrics_dir = Path(self.log_dir) / "metrics"
+        metrics_dir.mkdir(parents=True, exist_ok=True)
+
+        # 在 metrics 子目录里创建一个 CSV 文件
+        self.metrics_file = metrics_dir / "metrics.csv"
+        if not self.metrics_file.exists():
+            with open(self.metrics_file, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["step", "metric", "value"])
+
+        # metrics 是一个 dict，例如 {"train/loss": 0.123, "train/total": 0.456}
+        with open(self.metrics_file, "a", newline="") as f:
+            writer = csv.writer(f)
+            for k, v in metrics.items():
+                writer.writerow([step, k, v])

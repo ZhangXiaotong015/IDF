@@ -1,8 +1,8 @@
 dataset:
   target: idf.datasets.carm_dataset.CFM_valid_unpaired   # Dataset class handling paired GT / LQ folders.
   params:
-    dataroot: /mnt/c/Users/250024095/Projects/unpaired_carm/gt/validation    # Root directory containing subfolders for GT and LQ images.
-
+    dataroot: /data/unpaired_carm/gt/validation    # Root directory containing subfolders for GT and LQ images.
+            # /mnt/c/Users/250024095/Projects/unpaired_carm/gt/validation
     noise_level: [2, 25]                         # Inclusive range [min, max] of sigma for AWGN.
     channel_wise_noise: False                     # If True, sample independent sigma per RGB channel.
 
@@ -14,7 +14,7 @@ dataset:
     parallel_preload: False                          # If True and preload=True, use multiprocessing for faster load.
 
 data_loader:
-  batch_size: 1  
+  batch_size: 1
   shuffle: true
   num_workers: 8
   drop_last: false

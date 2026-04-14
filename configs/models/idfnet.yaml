@@ -13,16 +13,10 @@ params:
       input_key: LQ            # Key in the training batch dict for noisy / low-quality input.
       target_key: GT           # Key for clean ground-truth target.
     validate:                  # Validation sets (match dataset entries in "val_config" of configs/train/test_lit_denoising.yaml).
-      CBSD68_G:
-        input_key: LQ
-        target_key: GT
-      Kodak24_G:
-        input_key: LQ
-        target_key: GT
-      McMaster_G:
-        input_key: LQ
-        target_key: GT
-      Urban100_G:
+#      unpaired_carm:
+#        input_key: LQ
+#        target_key: GT
+      dicom_for_comparing_png:
         input_key: LQ
         target_key: GT
 
@@ -33,6 +27,8 @@ params:
       # Raw dataset channel-wise statistics.
       raw_mean : [0.36187348, 0.4361255,  0.4335091]  # Per-channel raw mean (RGB order) from CBSD432 subset.
       raw_std  : [0.19088039, 0.19967876, 0.21309015] # Per-channel raw standard deviation.
+#      raw_mean : 0.36187348
+#      raw_std  : 0.36187348
 
   optimizer_config:
     target: torch.optim.AdamW

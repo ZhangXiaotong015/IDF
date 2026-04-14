@@ -3,7 +3,9 @@ FROM nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
 WORKDIR /scratch/IDF
 
 RUN apt-get update && apt-get install -y \
-    wget git bzip2 vim && \
+    wget git bzip2 vim \
+    libgl1 libglib2.0-0 \
+    libglx0 libglx-mesa0 libgl1-mesa-glx  && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PATH=/opt/conda/bin:$PATH
