@@ -42,7 +42,7 @@ class LitADenoising(LitDenoising):
     def forward(self, noisy, adaptive_iter=False, max_iter=None, alpha_schedule=None):
         x = self.normalize(noisy)
         pred = self.model(x, adaptive_iter=adaptive_iter, max_iter=max_iter, alpha_schedule=alpha_schedule)
-        pred = self.normalize(pred, reverse=True) 
+        pred = self.normalize(pred, reverse=True)
         return pred
         
     def normalize(self, x, reverse=False):

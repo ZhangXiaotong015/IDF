@@ -2,8 +2,8 @@ data:
   target: idf.datasets.data_module.BaseDataModule
   params:
     # Path to training dataset configuration.
-    train_config: configs/datasets/train/carm_train_unpaired.yaml
-
+#    train_config: configs/datasets/train/carm_train_unpaired.yaml
+    train_config: configs/datasets/train/carm_train_paired.yaml
     # List of validation dataset configuration files. Add or remove as needed.
     # Match entries in data_config/validate of configs/models/idfnet.yaml
     val_config: [
@@ -70,7 +70,7 @@ lightning:
       params:
        save_dir : logs/
        name: LocalImageLogger
-       version: unpaired_jpeg_validateOnPaired               # Replace with experiment identifier.
+       version: persudo_paired_ASD               # Replace with experiment identifier.
 
     # Additional logger options (uncomment preferred):
     # - target: models.loggers.TensorBoardLogger

@@ -32,8 +32,10 @@ class CFM_train_paired(Dataset) :
         self.lq_folder, self.gt_folder = lq_folder, gt_folder
         self.noisyDataset, self.cleanDataset = self.getPathList()    
 
-        self.GT_dir = [join(self.cleanDataset[1], fn) for fn in self.cleanDataset[0]]
-        self.LQ_dir = [join(self.noisyDataset[1], fn) for fn in self.noisyDataset[0]]
+        # self.GT_dir = [join(self.cleanDataset[1], fn) for fn in self.cleanDataset[0]]
+        # self.LQ_dir = [join(self.noisyDataset[1], fn) for fn in self.noisyDataset[0]]
+        self.GT_dir = self.cleanDataset
+        self.LQ_dir = self.noisyDataset
 
         if self.preload:
             if parallel_preload:
@@ -59,8 +61,8 @@ class CFM_train_paired(Dataset) :
             noisy = self.LQ[index]
             clean = self.GT[index]
         else:
-            noisy = np.array(Image.open(self.LQ_dir[index]))
-            clean = np.array(Image.open(self.GT_dir[index]))
+            noisy = np.array(Image.open(self.LQ_dir[index]).convert("RGB"))
+            clean = np.array(Image.open(self.GT_dir[index]).convert("RGB"))
 
         if not self.test:
             h, w, _ = clean.shape
@@ -95,32 +97,41 @@ class CFM_train_paired(Dataset) :
         img_item = {}
         img_item['GT'] = clean_patch
         img_item['LQ'] = noisy_patch
-        img_item['file_name'] = self.noisyDataset[0][index]
+        img_item['file_name'] = self.noisyDataset[index]
         # img_item['metadata'] = label
         
         return img_item
 
     def __len__(self):
-        return len(self.noisyDataset[0])
+        return len(self.noisyDataset)
 
     def getPathList(self) :            
         noisyPath = join(self.dataroot, self.lq_folder)
         cleanPath = join(self.dataroot, self.gt_folder)
-    
+
         # Create List Instance for Adding Dataset Path
-        noisyPathList = listdir(noisyPath)
-        cleanPathList = listdir(cleanPath)
+        # noisyPathList = listdir(noisyPath)
+        # cleanPathList = listdir(cleanPath)
+        cleanPathList = []
+        noisyPathList = []
+        for root, dirs, files in os.walk(cleanPath):
+            for f in files:
+                cleanPathList.append(os.path.join(root, f))
+        for root, dirs, files in os.walk(noisyPath):
+            for f in files:
+                noisyPathList.append(os.path.join(root, f))
         
         # Create List Instance for Adding File Name
-        noisyNameList = [imageName for imageName in noisyPathList if imageName.split(".")[-1] in ["png", "tif"]]
-        cleanNameList = [imageName for imageName in cleanPathList if imageName.split(".")[-1] in ["png", "tif"]]
+        noisyNameList = [imageName for imageName in noisyPathList if imageName.split(".")[-1] in ["jpg", "png", "tif"]]
+        cleanNameList = [imageName for imageName in cleanPathList if imageName.split(".")[-1] in ["jpg", "png", "tif"]]
         
         # Sort List Instance
         noisyNameList = natsorted(noisyNameList)
         cleanNameList = natsorted(cleanNameList)
         
-        return (noisyNameList, noisyPath), (cleanNameList, cleanPath)
-    
+        # return (noisyNameList, noisyPath), (cleanNameList, cleanPath)
+        return noisyNameList, cleanNameList
+
 class CFM_valid_paired(Dataset) :
     def __init__(self, dataroot:str, patch_size:Optional[int], augmentation:bool,
                  preload:bool, parallel_preload:bool, test:bool,
