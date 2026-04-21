@@ -35,7 +35,7 @@ lightning:
   matmul_precision: ~
   
   trainer:
-    accelerator: auto              # Automatically select CPU / GPU / MPS.
+    accelerator: gpu #auto              # Automatically select CPU / GPU / MPS.
     precision: 32                  # Numerical precision: 32 | 16-mixed | bf16-mixed.
     devices: [0]                   # GPU indices to use.
     default_root_dir:              # Root directory for logs & checkpoints.
@@ -70,7 +70,7 @@ lightning:
       params:
        save_dir : logs/
        name: LocalImageLogger
-       version: persudo_paired_ASD               # Replace with experiment identifier.
+       version: persudo_paired_ASD_CFD               # Replace with experiment identifier.
 
     # Additional logger options (uncomment preferred):
     # - target: models.loggers.TensorBoardLogger

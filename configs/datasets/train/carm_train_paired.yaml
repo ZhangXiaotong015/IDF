@@ -3,7 +3,7 @@
 dataset:
   target: idf.datasets.carm_dataset.CFM_train_paired   # Dataset class.
   params:
-    dataroot: /data/ASD_persudo_paired    # Root directory of clean training images.
+    dataroot: /data/ASD_CFD_persudo_paired    # Root directory of clean training images.
     lq_folder: low
     gt_folder: high
     
@@ -24,7 +24,7 @@ data_loader:
   persistent_workers: true
 
 repeat_dataset:
-  times: 5
+  times: 1
 
 batch_transform:
   target: idf.datasets.batch_transform.IdentityBatchTransform

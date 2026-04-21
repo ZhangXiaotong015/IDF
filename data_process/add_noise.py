@@ -2,10 +2,20 @@ import os
 import cv2
 import numpy as np
 
+# high
+# A = 3.50e-5
+# B = 0.065
+# C = -1.87e-6
 
-A = 3.50e-5
+# # mid A=1.75 cfd_add_noise_a_1_75
+A = 1.75e-5
 B = 0.065
 C = -1.87e-6
+
+# low A=0.9 C=1 cfd_add_noise_a_0_9
+# A = 0.9e-5
+# B = 0.065
+# C = -1e-6
 
 def add_poisson_gaussian_noise(img):
     # 1. Poisson
@@ -48,7 +58,8 @@ def process_folder(input_folder, output_folder):
 
 
 if __name__ == "__main__":
-    input_folder = r"D:\code\C_ARM_denosing\ASD\train"
-    output_folder = r"D:\code\C_ARM_denosing\ASD\add"
-
+    input_folder = r"/data/ASD/train"
+    output_folder = r"/data/asd_add_noise_a_1_75"
+    print(f"Processing {input_folder}")
+    print(f"Output folder {output_folder}")
     process_folder(input_folder, output_folder)
