@@ -32,7 +32,7 @@ def main() -> None:
         model = instantiate_from_config(model_config)
 
     if config.model.get("resume"):
-        state_dict = torch.load(config.model.resume, map_location="cpu")
+        state_dict = torch.load(config.model.resume, map_location="cpu", weights_only=False)
         if model_config.params.misc_config.compile == False:
             for key in list(state_dict.keys()):
                 state_dict[key.replace("_orig_mod.", "")] = state_dict.pop(key)

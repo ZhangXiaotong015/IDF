@@ -1,0 +1,43 @@
+data:
+  target: idf.datasets.data_module.BaseDataModule
+  params:
+    # Path to training dataset configuration.
+    train_config: configs/datasets/train/carm_train_paired.yaml
+
+    # List of validation dataset configuration files. Add or remove as needed.
+    # Match entries in data_config/validate of configs/models/idfnet.yaml
+    val_config: [
+      configs/datasets/test/carm_test.yaml,
+    ]
+
+    # Additional real-world validation datasets (uncomment to enable):
+    # [
+    #  'configs/datasets/test/sidd.yaml',
+    #  'configs/datasets/test/siddplus.yaml',
+    #  'configs/datasets/test/polyu.yaml',
+    #  'configs/datasets/test/nam.yaml',
+    #  'configs/datasets/test/mc.yaml',
+    # ]
+
+model:
+  # Path to model (architecture + optimization) configuration.
+  config: configs/models/idfnet.yaml
+
+  # Path to checkpoint for resuming training. Use ~ for fresh start.
+  resume: LocalImageLogger/persudo_paired_ASD_CFD/checkpoints/epoch=1123-step=100000.ckpt
+
+lightning:
+  seed: 123
+  mode: validate
+
+  trainer:
+    accelerator: gpu # auto              # Automatically select CPU / GPU / MPS.
+    precision: 32                  # Numerical precision: 32 | 16-mixed | bf16-mixed.
+    devices: [0]                   # GPU indices to use.
+
+  loggers:
+    - target: idf.models.loggers.LocalImageLogger
+      params:
+       save_dir : logs/
+       name: LocalImageLogger
+       version: test_set_jpg               # Replace with experiment identifier.

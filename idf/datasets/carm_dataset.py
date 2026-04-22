@@ -449,3 +449,84 @@ class CFM_valid_unpaired(Dataset) :
         
         # return (cleanNameList, cleanPath)
         return cleanNameList
+
+
+class CFM_test(Dataset):
+    def __init__(self, dataroot: str, patch_size: Optional[int],
+                 preload: bool, parallel_preload: bool, test: bool):
+        super(CFM_test, self).__init__()
+
+        # Initialize Variables
+        self.dataroot = dataroot
+        self.patch_size = patch_size
+        self.test = test
+        self.preload = preload
+
+        # Get Dataset Instances
+        self.noisyDataset = self.getPathList()
+
+        self.noisy_dir = self.noisyDataset
+
+        if self.preload:
+            if parallel_preload:
+                # Preload images into RAM in parallel
+                with ThreadPoolExecutor() as executor:
+                    self.noisy = list(executor.map(self.load_image, self.noisy_dir))
+            else:
+                self.noisy = []
+                for dir in self.noisy_dir:
+                    self.noisy.append(np.array(Image.open(dir).convert('RGB')))
+
+    def load_image(self, img_path):
+        image = np.array(Image.open(img_path).convert('RGB'))
+        return image
+
+    def __getitem__(self, index):
+        # Load Data
+        if self.preload:
+            noisy = self.noisy[index]
+        else:
+            noisy = np.array(Image.open(self.noisy_dir[index]).convert("RGB"))
+
+        if self.patch_size is not None:
+            # perform center crop
+            h, w, _ = noisy.shape
+            start_h = (h - self.patch_size) // 2
+            start_w = (w - self.patch_size) // 2
+
+            end_h = start_h + self.patch_size
+            end_w = start_w + self.patch_size
+
+            noisy_patch = noisy[start_h:end_h, start_w:end_w, :]
+        else:
+            noisy_patch = noisy
+
+        noisy_patch = noisy_patch.transpose(2, 0, 1).astype(np.float32) / 255.
+
+        img_item = {}
+        img_item['GT'] = noisy_patch
+        img_item['LQ'] = noisy_patch
+        img_item['file_name'] = self.noisyDataset[index]
+
+        return img_item
+
+    def __len__(self):
+        return len(self.noisyDataset)
+
+    def getPathList(self):
+        # Get Dataset Path
+        noisyPath = self.dataroot
+
+        # Create List Instance for Adding Dataset Path
+        noisyPathList = []
+        for root, dirs, files in os.walk(noisyPath):
+            for f in files:
+                noisyPathList.append(os.path.join(root, f))
+
+        # Create List Instance for Adding File Name
+        noisyNameList = [imageName for imageName in noisyPathList if imageName.split('.')[-1] in ["png", "bmp", "jpg"]]
+
+        # Sort List Instance
+        noisyNameList = natsorted(noisyNameList)
+
+        return noisyNameList

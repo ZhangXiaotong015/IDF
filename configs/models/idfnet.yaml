@@ -16,9 +16,13 @@ params:
 #      unpaired_carm:
 #        input_key: LQ
 #        target_key: GT
-      dicom_for_comparing_png:
+#      dicom_for_comparing_png:
+#        input_key: LQ
+#        target_key: GT
+      test_set_jpg:
         input_key: LQ
         target_key: GT
+        filename_key: file_name
 
     norm:                      # Data normalization.
       mu_data: 0.0
