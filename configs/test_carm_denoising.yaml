@@ -24,7 +24,7 @@ model:
   config: configs/models/idfnet.yaml
 
   # Path to checkpoint for resuming training. Use ~ for fresh start.
-  resume: LocalImageLogger/persudo_paired_ASD_CFD/checkpoints/epoch=1123-step=100000.ckpt
+  resume: pretrained_models/epoch=1123-step=100000.ckpt
 
 lightning:
   seed: 123
@@ -40,4 +40,4 @@ lightning:
       params:
        save_dir : logs/
        name: LocalImageLogger
-       version: test_set_jpg               # Replace with experiment identifier.
+       version: Team1_Results               # Replace with experiment identifier.

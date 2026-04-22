@@ -224,7 +224,7 @@ class LitADenoising(LitDenoising):
 
         pred = torch.clamp(pred, 0.0, 1.0) # (1,3,H,W)
 
-        save_dir = "/scratch/IDF/logs/LocalImageLogger/test_set_jpg"
+        save_dir = "/scratch/IDF/logs/LocalImageLogger/Team1_Results"
         os.makedirs(save_dir, exist_ok=True)
 
         save_path = os.path.join(save_dir, file_name.replace('.jpg','_T1.jpg'))
