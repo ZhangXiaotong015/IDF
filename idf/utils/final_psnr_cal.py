@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # image = cv2.imread('/scratch/IDF/logs/LocalImageLogger/test_set_jpg/050_T1.jpg', 0)
     # image = cv2.imread('/data/test_set_50/cfd_25/spine/050.jpg', 0)
 
-    predPath = '/scratch/IDF/logs/LocalImageLogger/test_set_jpg'
+    predPath = '/scratch/IDF/logs/LocalImageLogger/Team1_Results'
     # predPath = '/data/test_set_50'
     psnr_list = []
     for root, dirs, files in os.walk(predPath):

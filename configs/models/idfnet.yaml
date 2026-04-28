@@ -6,7 +6,7 @@ params:
 
     # IDF inference options
     adaptive_iteration: False  # If true, enable early halting based on kernel change metric (see halt_threshold in model).
-    max_iteration: 10           # Upper bound denoising iteration during inference (default = 10).
+    max_iteration: 3           # Upper bound denoising iteration during inference (default = 10).
 
   data_config:
     train:
@@ -16,9 +16,9 @@ params:
 #      unpaired_carm:
 #        input_key: LQ
 #        target_key: GT
-#      dicom_for_comparing_png:
-#        input_key: LQ
-#        target_key: GT
+#       dicom_for_comparing_png:
+#         input_key: LQ
+#         target_key: GT
       test_set_jpg:
         input_key: LQ
         target_key: GT
@@ -50,7 +50,7 @@ params:
   denoiser_config:
     target: idf.archs.idf_arch.IDFNet  # iterative dynamic filtering network.
     params:
-      num_iter: 10             # Maximum iterative denoising steps.
+      num_iter: 3             # Maximum iterative denoising steps.
       kernel_size: 3           # Spatial size (k) of adaptive kernels (k x k).
       num_channels: 3          # Image channels.
       hidden_channels: 64      # Internal feature width in DID block.

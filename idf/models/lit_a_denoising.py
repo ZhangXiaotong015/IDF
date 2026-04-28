@@ -9,6 +9,7 @@ import numpy as np
 import cv2
 import torchvision.utils as vutils
 import os
+import time
 
 def ssim(img1, img2, window_size=11, sigma=1.5, K1=0.01, K2=0.03, L=255):
 
@@ -106,7 +107,8 @@ class LitADenoising(LitDenoising):
                          optimizer_config, scheduler_config,misc_config,)
 
         self.model = instantiate_from_config(denoiser_config)
-        
+        num_params = sum(p.numel() for p in self.model.parameters())
+        print(f"model size: {num_params/1e6:.2f} M")
         self.misc_config = misc_config
         if self.misc_config.compile:
             self.model = torch.compile(self.model)
@@ -126,7 +128,10 @@ class LitADenoising(LitDenoising):
 
     def forward(self, noisy, adaptive_iter=False, max_iter=None, alpha_schedule=None):
         x = self.normalize(noisy)
+
+        print(f"Allocated before inference: {torch.cuda.memory_allocated()/1024**2:.2f} MB")
         pred = self.model(x, adaptive_iter=adaptive_iter, max_iter=max_iter, alpha_schedule=alpha_schedule)
+        print(f"Allocated after inference: {torch.cuda.memory_allocated()/1024**2:.2f} MB")
         pred = self.normalize(pred, reverse=True)
         return pred
         
@@ -216,12 +221,13 @@ class LitADenoising(LitDenoising):
 
     def _test_step(self, batch, batch_idx, val_config, suffix=""):
         x, y, file_name = self.get_input_test(batch, val_config, norm_data=False)
-        assert x.shape[0] == 1
-
+        #assert x.shape[0] == 1
+        start = time.perf_counter()
         pred = self(x, adaptive_iter=self.misc_config.adaptive_iteration,
                     max_iter=self.misc_config.max_iteration,
                     alpha_schedule=self.misc_config.get('alpha_schedule'))
-
+        end = time.perf_counter()
+        print(f"Inference time: {end-start:.4f} seconds")
         pred = torch.clamp(pred, 0.0, 1.0) # (1,3,H,W)
 
         save_dir = "/scratch/IDF/logs/LocalImageLogger/Team1_Results"

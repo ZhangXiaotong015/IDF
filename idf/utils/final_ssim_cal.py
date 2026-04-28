@@ -90,7 +90,7 @@ if __name__ == "__main__":
     #
     # img_2 = cv2.imread('denoised_image.png', 0)   # 降噪后图像
 
-    predPath = '/scratch/IDF/logs/LocalImageLogger/test_set_jpg'
+    predPath = '/scratch/IDF/logs/LocalImageLogger/Team1_Results'
     oriPath = '/data/test_set_50'
 
     # 建立预测结果字典，key 用去掉 "_T1" 的文件名

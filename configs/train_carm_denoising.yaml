@@ -39,7 +39,7 @@ lightning:
     precision: 32                  # Numerical precision: 32 | 16-mixed | bf16-mixed.
     devices: [0]                   # GPU indices to use.
     default_root_dir:              # Root directory for logs & checkpoints.
-    max_steps: 100001               # Total optimization steps.
+    max_steps: 50001               # Total optimization steps.
     val_check_interval: 2000       # Run validation every N training steps.
     check_val_every_n_epoch: ~     # Use only if doing epoch-based validation.
     log_every_n_steps: 200         # Logging frequency.
@@ -70,7 +70,7 @@ lightning:
       params:
        save_dir : logs/
        name: LocalImageLogger
-       version: persudo_paired_ASD_CFD               # Replace with experiment identifier.
+       version: persudo_paired_ASD_CFD_iters3               # Replace with experiment identifier.
 
     # Additional logger options (uncomment preferred):
     # - target: models.loggers.TensorBoardLogger

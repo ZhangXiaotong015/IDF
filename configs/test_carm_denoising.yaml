@@ -24,7 +24,8 @@ model:
   config: configs/models/idfnet.yaml
 
   # Path to checkpoint for resuming training. Use ~ for fresh start.
-  resume: pretrained_models/epoch=1123-step=100000.ckpt
+  # resume: pretrained_models/epoch=1123-step=100000.ckpt
+  resume: pretrained_models/epoch=561-step=50000.ckpt
 
 lightning:
   seed: 123
@@ -32,7 +33,7 @@ lightning:
 
   trainer:
     accelerator: gpu # auto              # Automatically select CPU / GPU / MPS.
-    precision: 32                  # Numerical precision: 32 | 16-mixed | bf16-mixed.
+    precision: 16-mixed                  # Numerical precision: 32 | 16-mixed | bf16-mixed.
     devices: [0]                   # GPU indices to use.
 
   loggers:
