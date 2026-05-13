@@ -7,4 +7,4 @@
 
 python /scratch/IDF/main.py \
     --config /scratch/IDF/configs/train_carm_denoising.yaml
-    # --debug
+#    --debug

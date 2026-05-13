@@ -10,6 +10,7 @@ import cv2
 import torchvision.utils as vutils
 import os
 import time
+from torchvision.utils import make_grid
 
 def ssim(img1, img2, window_size=11, sigma=1.5, K1=0.01, K2=0.03, L=255):
 
@@ -167,7 +168,9 @@ class LitADenoising(LitDenoising):
 
         pred = self.model(x)
 
-        losses['train/loss'] = self.loss(pred, y)
+        # losses['train/loss'] = self.loss(pred, y)
+        # losses['train/loss'] = self.loss(pred, y, x)
+        losses['train/loss'] = self.loss(pred, y, x, batch_idx)
         losses['train/total'] = sum(losses.values())
         self.log_dict(losses, prog_bar=True)
         return losses['train/total']
@@ -180,8 +183,8 @@ class LitADenoising(LitDenoising):
     def validation_step(self, batch, batch_idx, dataloader_idx=0):
         val_name = self.val_dataset_names[dataloader_idx]
         val_config = self.data_config.validate[val_name]
-        # self._validation_step(batch, batch_idx, val_config, suffix=f"_{val_name}")
-        self._test_step(batch, batch_idx, val_config, suffix=f"_{val_name}")
+        self._validation_step(batch, batch_idx, val_config, suffix=f"_{val_name}")
+        # self._test_step(batch, batch_idx, val_config, suffix=f"_{val_name}")
 
     def on_validation_end(self):
         pass
@@ -207,6 +210,22 @@ class LitADenoising(LitDenoising):
             self.sampled_images.append(x[0].cpu())
             self.sampled_images.append(y[0].cpu())
             self.sampled_images.append(pred[0].cpu())
+            if len(self.sampled_images) == 0:
+                return
+            rows = []
+            # 每 3 张图为一组 (x, y, pred)
+            for i in range(0, len(self.sampled_images), 3):
+                triplet = self.sampled_images[i:i + 3]
+                if len(triplet) == 3:
+                    row = make_grid(triplet, nrow=3)
+                    rows.append(row)
+
+            # 垂直拼接所有行
+            final_grid = torch.cat(rows, dim=1)
+
+            self.log_image("sampled_images", final_grid, batch_idx)
+
+            self.sampled_images.clear()
 
     @torch.no_grad()
     def get_input_test(self, batch, config, norm_data=True):

@@ -2,13 +2,13 @@ data:
   target: idf.datasets.data_module.BaseDataModule
   params:
     # Path to training dataset configuration.
-#    train_config: configs/datasets/train/carm_train_unpaired.yaml
-    train_config: configs/datasets/train/carm_train_paired.yaml
+    train_config: configs/datasets/train/carm_train_unpaired.yaml
+#    train_config: configs/datasets/train/carm_train_paired.yaml
     # List of validation dataset configuration files. Add or remove as needed.
     # Match entries in data_config/validate of configs/models/idfnet.yaml
     val_config: [
-#      configs/datasets/test/carm_val_unpaired.yaml,
-      configs/datasets/test/carm_val_paired.yaml,
+      configs/datasets/test/carm_val_unpaired.yaml,
+#      configs/datasets/test/carm_val_paired.yaml,
     ]
 
 
@@ -36,7 +36,7 @@ lightning:
   
   trainer:
     accelerator: gpu #auto              # Automatically select CPU / GPU / MPS.
-    precision: 32                  # Numerical precision: 32 | 16-mixed | bf16-mixed.
+    precision: 16-mixed                  # Numerical precision: 32 | 16-mixed | bf16-mixed.
     devices: [0]                   # GPU indices to use.
     default_root_dir:              # Root directory for logs & checkpoints.
     max_steps: 50001               # Total optimization steps.
@@ -70,7 +70,7 @@ lightning:
       params:
        save_dir : logs/
        name: LocalImageLogger
-       version: persudo_paired_ASD_CFD_iters3               # Replace with experiment identifier.
+       version: unpaired_siteJPG_combinedLossV2_iters3               # Replace with experiment identifier.
 
     # Additional logger options (uncomment preferred):
     # - target: models.loggers.TensorBoardLogger

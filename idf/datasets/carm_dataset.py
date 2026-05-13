@@ -13,7 +13,41 @@ from natsort import natsorted
 from idf.datasets.utils import augment_img
 from idf.utils.noise import add_Gaussian_noise
 from typing import Optional
+import cv2
 
+def add_noise_with_random_ABC(img):
+    # 论文参数
+    A0 = 3.50e-5
+    B0 = 0.065
+    C0 = -1.87e-6
+
+    # ---- 1. 随机采样 A/B/C ----
+    # 剂量主导：A 大范围缩放
+    kA = np.random.uniform(0.5, 2.0)
+
+    # 系统扰动：B、C 小范围扰动
+    kB = np.random.uniform(0.9, 1.1)
+    kC = np.random.uniform(0.8, 1.2)
+
+    A = A0 * kA
+    B = B0 * kB
+    C = C0 * kC
+
+    # ---- 2. Poisson-Gaussian 加噪 ----
+    scale = 255.0
+    poisson_input = img * scale
+    poisson_noisy = np.random.poisson(poisson_input).astype(np.float32) / scale
+
+    variance = A * (img + B) + C
+    variance = np.clip(variance, 0, None)
+    sigma = np.sqrt(variance)
+
+    gaussian_noise = np.random.normal(0, sigma).astype(np.float32)
+
+    noisy = poisson_noisy + gaussian_noise
+    noisy = np.clip(noisy, 0, 1)
+
+    return noisy, (A, B, C)
 
 class CFM_train_paired(Dataset) :
     def __init__(self, dataroot:str, patch_size:int, augmentation:bool,
@@ -323,16 +357,24 @@ class CFM_train_unpaired(Dataset) :
             clean_patch = augment_img(clean_patch, mode)
 
         clean_patch = clean_patch.transpose(2, 0, 1).astype(np.float32) / 255.
-        noisy_patch, noise_level = add_Gaussian_noise(clean_patch, 
-                                                      noise_level1=self.noise_level[0], 
-                                                      noise_level2=self.noise_level[1],
-                                                      channel_wise=self.channel_wise_noise)
+        # noisy_patch, noise_level = add_Gaussian_noise(clean_patch,
+        #                                               noise_level1=self.noise_level[0],
+        #                                               noise_level2=self.noise_level[1],
+        #                                               channel_wise=self.channel_wise_noise)
+        noisy_patch, abc = add_noise_with_random_ABC(clean_patch)
+
+        # clean_patch = np.transpose(clean_patch, (1, 2, 0))  # (3,256,256) → (256,256,3)
+        # noisy_patch = np.transpose(noisy_patch, (1, 2, 0))
+        # clean_path = os.path.join('/scratch/IDF', f"clean_{index}.png")
+        # noisy_path = os.path.join('/scratch/IDF', f"noisy_{index}.png")
+        # cv2.imwrite(clean_path, (clean_patch * 255).astype(np.uint8))
+        # cv2.imwrite(noisy_path, (noisy_patch * 255).astype(np.uint8))
 
         img_item = {}
         img_item['GT'] = clean_patch
         img_item['LQ'] = noisy_patch
         img_item['file_name'] = self.cleanDataset[index] # self.cleanDataset[0][index]
-        img_item['noise_level'] = noise_level
+        img_item['noise_level'] = abc #noise_level
         
         return img_item
 
@@ -413,16 +455,17 @@ class CFM_valid_unpaired(Dataset) :
             clean_patch = augment_img(clean_patch, mode)
 
         clean_patch = clean_patch.transpose(2, 0, 1).astype(np.float32) / 255.
-        noisy_patch, noise_level = add_Gaussian_noise(clean_patch, 
-                                                      noise_level1=self.noise_level[0], 
-                                                      noise_level2=self.noise_level[1],
-                                                      channel_wise=self.channel_wise_noise)
+        # noisy_patch, noise_level = add_Gaussian_noise(clean_patch,
+        #                                               noise_level1=self.noise_level[0],
+        #                                               noise_level2=self.noise_level[1],
+        #                                               channel_wise=self.channel_wise_noise)
+        noisy_patch = clean_patch
 
         img_item = {}
         img_item['GT'] = clean_patch
         img_item['LQ'] = noisy_patch
         img_item['file_name'] = self.cleanDataset[index] # self.cleanDataset[0][index]
-        img_item['noise_level'] = noise_level
+        # img_item['noise_level'] = noise_level
         
         return img_item
 
@@ -449,7 +492,6 @@ class CFM_valid_unpaired(Dataset) :
         
         # return (cleanNameList, cleanPath)
         return cleanNameList
-
 
 class CFM_test(Dataset):
     def __init__(self, dataroot: str, patch_size: Optional[int],
@@ -530,3 +572,4 @@ class CFM_test(Dataset):
         noisyNameList = natsorted(noisyNameList)
 
         return noisyNameList
+
