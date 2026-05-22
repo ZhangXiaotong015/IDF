@@ -109,10 +109,10 @@ class LitDenoising(pl.LightningModule):
         optimizer.step(closure=optimizer_closure)
 
     @torch.no_grad()
-    def log_image(self, key, image, caption=None):
+    def log_image(self, key, image, caption=None, sample_id=None):
         for logger in self.loggers:
             if isinstance(logger, LocalImageLogger):
-                logger.experiment.log_image(key.split('/')[-1], image, self.global_step+1)
+                logger.experiment.log_image(key.split('/')[-1], image, self.global_step+1, sample_id)
             if isinstance(logger, TensorBoardLogger):
                 logger.experiment.add_image(key, image, self.global_step+1)
             if isinstance(logger, WandbLogger):

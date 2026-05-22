@@ -191,7 +191,7 @@ class LitADenoising(LitDenoising):
 
     def _validation_step(self, batch, batch_idx, val_config, suffix=""):
         x, y = self.get_input(batch, val_config, norm_data=False)
-        assert x.shape[0] == 1
+        # assert x.shape[0] == 1
 
         pred = self(x, adaptive_iter=self.misc_config.adaptive_iteration, 
                     max_iter=self.misc_config.max_iteration,
@@ -206,26 +206,39 @@ class LitADenoising(LitDenoising):
 
         self.log_dict(losses, sync_dist=True, prog_bar=True, add_dataloader_idx=False)
         
+        # if batch_idx % 500 == 0:
+        #     self.sampled_images.append(x[0].cpu())
+        #     self.sampled_images.append(y[0].cpu())
+        #     self.sampled_images.append(pred[0].cpu())
+        #     if len(self.sampled_images) == 0:
+        #         return
+        #     rows = []
+        #     # 每 3 张图为一组 (x, y, pred)
+        #     for i in range(0, len(self.sampled_images), 3):
+        #         triplet = self.sampled_images[i:i + 3]
+        #         if len(triplet) == 3:
+        #             row = make_grid(triplet, nrow=3)
+        #             rows.append(row)
+        #
+        #     # 垂直拼接所有行
+        #     final_grid = torch.cat(rows, dim=1)
+        #
+        #     self.log_image("sampled_images", final_grid, batch_idx)
+        #
+        #     self.sampled_images.clear()
+
         if batch_idx % 500 == 0:
-            self.sampled_images.append(x[0].cpu())
-            self.sampled_images.append(y[0].cpu())
-            self.sampled_images.append(pred[0].cpu())
-            if len(self.sampled_images) == 0:
-                return
-            rows = []
-            # 每 3 张图为一组 (x, y, pred)
-            for i in range(0, len(self.sampled_images), 3):
-                triplet = self.sampled_images[i:i + 3]
-                if len(triplet) == 3:
-                    row = make_grid(triplet, nrow=3)
-                    rows.append(row)
+            # 遍历 batch 内的所有样本
+            for i in range(x.shape[0]):
+                # 每个样本的三张图加入 sampled_images
+                self.sampled_images.append(x[i].cpu())
+                # self.sampled_images.append(y[i].cpu())
+                self.sampled_images.append(pred[i].cpu())
 
-            # 垂直拼接所有行
-            final_grid = torch.cat(rows, dim=1)
-
-            self.log_image("sampled_images", final_grid, batch_idx)
-
-            self.sampled_images.clear()
+                row = make_grid(self.sampled_images, nrow=len(self.sampled_images))
+                self.log_image("sampled_images", row, batch_idx, sample_id=i)
+                # 清空 sampled_images，为下一个样本准备
+                self.sampled_images.clear()
 
     @torch.no_grad()
     def get_input_test(self, batch, config, norm_data=True):

@@ -96,7 +96,7 @@ class LocalImageLogger(Logger):
 
         return self
 
-    def log_image(self, name, image, step=None):
+    def log_image(self, name, image, step=None, sample_id=None):
         # if type(image) == torch.Tensor:
         #     # Convert tensor to PIL Image and save
         #     image = Image.fromarray((image*255).permute(1, 2, 0).byte().cpu().numpy())
@@ -110,18 +110,18 @@ class LocalImageLogger(Logger):
         #     raise NotImplementedError()
 
         # 创建 sampled_images 子目录
-        img_dir = Path(self.log_dir) / "sampled_images"
+        img_dir = Path(self.log_dir) / "sampled_images" / f"step_{step}"
         img_dir.mkdir(parents=True, exist_ok=True)
 
         if isinstance(image, torch.Tensor):
             # Tensor 转换为 PIL Image
             image = Image.fromarray((image * 255).permute(1, 2, 0).byte().cpu().numpy())
-            image.save(img_dir / f"{name}_step_{step}.png")
+            image.save(img_dir / f"{name}_step_{step}_sample_{sample_id}.png")
         elif isinstance(image, np.ndarray):
             image = Image.fromarray(np.uint8(image * 255).transpose(1, 2, 0))
-            image.save(img_dir / f"{name}_step_{step}.png")
+            image.save(img_dir / f"{name}_step_{step}_sample_{sample_id}.png")
         elif isinstance(image, Image.Image):
-            image.save(img_dir / f"{name}_step_{step}.png")
+            image.save(img_dir / f"{name}_step_{step}_sample_{sample_id}.png")
         else:
             raise NotImplementedError()
 

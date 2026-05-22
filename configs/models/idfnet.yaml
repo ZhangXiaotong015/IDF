@@ -19,7 +19,10 @@ params:
 #       dicom_for_comparing_png:
 #         input_key: LQ
 #         target_key: GT
-       unpaired_siteJPG:
+#       unpaired_siteJPG:
+#         input_key: LQ
+#         target_key: GT
+       unpaired_filtered_cardiac_neuro:
          input_key: LQ
          target_key: GT
 #      test_set_jpg:
@@ -50,14 +53,17 @@ params:
 #    params:
 #      loss_weight: !!float 1.0
 #      reduction: mean
-    target: idf.losses.basic_loss.FinalLossV2
+    target: idf.losses.basic_loss.FinalLossV2_VesselBoostX
     params:
-      grad_weight: 0.2
+      grad_weight: 0.25
       tv_weight: 3e-5
       frangi_weight: 1e-3
       brightness_weight: 0.01
       pseudo_sigma: 1.0
       decay_tau: 3000
+      vessel_dark_weight: 0.15
+      vessel_edge_weight: 0.15
+      vessel_contrast_weight: 0.10
 
   denoiser_config:
     target: idf.archs.idf_arch.IDFNet  # iterative dynamic filtering network.
