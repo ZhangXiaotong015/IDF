@@ -131,10 +131,175 @@ class LitADenoising(LitDenoising):
         x = self.normalize(noisy)
 
         print(f"Allocated before inference: {torch.cuda.memory_allocated()/1024**2:.2f} MB")
+
         pred = self.model(x, adaptive_iter=adaptive_iter, max_iter=max_iter, alpha_schedule=alpha_schedule)
+
         print(f"Allocated after inference: {torch.cuda.memory_allocated()/1024**2:.2f} MB")
+
         pred = self.normalize(pred, reverse=True)
-        return pred
+
+        # -------------------------
+        # Post-processing Enhancement V1 (CLAHE + Unsharp Mask)
+        # -------------------------
+        enhanced_list = []
+        for i in range(pred.size(0)):  # 遍历 batch
+            img = pred[i].detach().cpu().numpy()  # (3, H, W)
+            img = np.transpose(img, (1, 2, 0))  # 转成 (H, W, 3)
+            img = (img * 255).astype(np.uint8)
+
+            # 取灰度通道
+            pred_gray = img[:, :, 0]
+
+            # CLAHE
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            enhanced_gray = clahe.apply(pred_gray)
+
+            # 转回RGB三通道
+            enhanced_rgb = cv2.cvtColor(enhanced_gray, cv2.COLOR_GRAY2RGB)
+
+            # Unsharp Mask
+            # blurred = cv2.GaussianBlur(enhanced_rgb, (5, 5), 1.0)
+            blurred = cv2.GaussianBlur(cv2.copyMakeBorder(enhanced_rgb, 5, 5, 5, 5, cv2.BORDER_REFLECT), (5, 5), 1.0)
+            blurred = blurred[5:-5, 5:-5]  # 去掉填充区域
+            alpha = 1.5
+            sharpened = cv2.addWeighted(enhanced_rgb, 1 + alpha, blurred, -alpha, 0)
+
+            # 转回 torch.Tensor (C, H, W)
+            sharpened_tensor = torch.from_numpy(sharpened).float().permute(2, 0, 1) / 255.0
+            enhanced_list.append(sharpened_tensor)
+
+        # 拼回 batch
+        enhanced_pred = torch.stack(enhanced_list, dim=0)
+
+        # -------------------------
+        # Post-processing Enhancement V2 (CLAHE + Controlled Unsharp Mask + Noise Suppression + Color Balance)
+        # -------------------------
+        # enhanced_list = []
+        # for i in range(pred.size(0)):
+        #     img = pred[i].detach().cpu().numpy()  # (3, H, W)
+        #     img = np.transpose(img, (1, 2, 0))  # (H, W, 3)
+        #     img = (img * 255).astype(np.uint8)
+        #
+        #     # 灰度通道
+        #     pred_gray = img[:, :, 0]
+        #
+        #     # CLAHE（更温和的局部对比度）
+        #     clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(24, 24))
+        #     enhanced_gray = clahe.apply(pred_gray)
+        #
+        #     # 防止黑块：亮度保护 + 归一化
+        #     enhanced_gray = np.clip(enhanced_gray, 20, 235)
+        #     enhanced_gray = cv2.normalize(enhanced_gray, None, 0, 255, cv2.NORM_MINMAX)
+        #
+        #     # 转回RGB
+        #     enhanced_rgb = cv2.cvtColor(enhanced_gray, cv2.COLOR_GRAY2RGB)
+        #
+        #     # Controlled Unsharp Mask（降低锐化强度）
+        #     blurred = cv2.GaussianBlur(enhanced_rgb, (5, 5), 1.2)
+        #     alpha = 0.7
+        #     sharpened = cv2.addWeighted(enhanced_rgb, 1 + alpha, blurred, -alpha, 0)
+        #
+        #     # 噪声抑制掩膜：边缘增强 + 平滑区域保持去噪
+        #     edges = cv2.Canny(enhanced_gray, 30, 90)
+        #     mask = cv2.GaussianBlur(edges, (7, 7), 2).astype(np.float32) / 255.0
+        #
+        #     # 分区融合：边缘用锐化，平滑区域用原始denoised
+        #     layered = sharpened * mask[..., None] + enhanced_rgb * (1 - mask[..., None])
+        #
+        #     # 类型统一为 float32，避免 addWeighted 报错
+        #     layered = layered.astype(np.float32)
+        #     img = img.astype(np.float32)
+        #
+        #     # 通道平衡：防止单色块或偏色
+        #     for c in range(3):
+        #         mean_layer = layered[..., c].mean()
+        #         mean_img = img[..., c].mean()
+        #         scale = mean_img / (mean_layer + 1e-6)
+        #         layered[..., c] = np.clip(layered[..., c] * scale, 0, 255)
+        #
+        #     # 最后再和 denoised 原图轻度融合，保持层次同时抑制噪声
+        #     beta = 0.3  # 融合比例，可调
+        #     final = cv2.addWeighted(layered, 1 - beta, img, beta, 0)
+        #
+        #     # 限制像素范围并转回 uint8
+        #     final = np.clip(final, 0, 255).astype(np.uint8)
+        #
+        #     # 转回 torch.Tensor
+        #     final_tensor = torch.from_numpy(final).float().permute(2, 0, 1) / 255.0
+        #     enhanced_list.append(final_tensor)
+        #
+        # enhanced_pred = torch.stack(enhanced_list, dim=0)
+
+        # -------------------------
+        # Post-processing Enhancement V3 (CLAHE + Controlled Unsharp Mask + Noise Suppression + Color Balance + Block Detection Repair)
+        # -------------------------
+        # enhanced_list = []
+        # for i in range(pred.size(0)):
+        #     img = pred[i].detach().cpu().numpy()  # (3, H, W)
+        #     img = np.transpose(img, (1, 2, 0))  # (H, W, 3)
+        #     img = (img * 255).astype(np.uint8)
+        #
+        #     # 灰度通道
+        #     pred_gray = img[:, :, 0]
+        #
+        #     # CLAHE（更温和的局部对比度）
+        #     clahe = cv2.createCLAHE(clipLimit=0.8, tileGridSize=(32, 32))  # 降低对比度增强强度
+        #     enhanced_gray = clahe.apply(pred_gray)
+        #
+        #     # 防止黑块：亮度保护 + 归一化
+        #     enhanced_gray = np.clip(enhanced_gray, 25, 230)
+        #     enhanced_gray = cv2.normalize(enhanced_gray, None, 0, 255, cv2.NORM_MINMAX)
+        #
+        #     # 转回RGB
+        #     enhanced_rgb = cv2.cvtColor(enhanced_gray, cv2.COLOR_GRAY2RGB)
+        #
+        #     # Controlled Unsharp Mask（降低锐化强度）
+        #     blurred = cv2.GaussianBlur(enhanced_rgb, (5, 5), 1.5)
+        #     alpha = 0.5  # 降低锐化系数
+        #     sharpened = cv2.addWeighted(enhanced_rgb, 1 + alpha, blurred, -alpha, 0)
+        #
+        #     # 噪声抑制掩膜：边缘增强 + 平滑区域保持去噪
+        #     edges = cv2.Canny(enhanced_gray, 40, 100)  # 提高阈值，减少误检
+        #     mask = cv2.GaussianBlur(edges, (7, 7), 2).astype(np.float32) / 255.0
+        #
+        #     # 分区融合：边缘用锐化，平滑区域用原始denoised
+        #     layered = sharpened * mask[..., None] + enhanced_rgb * (1 - mask[..., None])
+        #
+        #     # 类型统一为 float32
+        #     layered = layered.astype(np.float32)
+        #     img = img.astype(np.float32)
+        #
+        #     # 通道平衡：防止单色块或偏色
+        #     for c in range(3):
+        #         mean_layer = layered[..., c].mean()
+        #         mean_img = img[..., c].mean()
+        #         scale = mean_img / (mean_layer + 1e-6)
+        #         layered[..., c] = np.clip(layered[..., c] * scale, 0, 255)
+        #
+        #     # 最后再和 denoised 原图轻度融合
+        #     beta = 0.4  # 稍微提高融合比例，柔化过渡
+        #     final = cv2.addWeighted(layered, 1 - beta, img, beta, 0)
+        #
+        #     # 限制像素范围并转回 uint8
+        #     final = np.clip(final, 0, 255).astype(np.uint8)
+        #
+        #     # -------------------------
+        #     # 保险机制：检测并修复单一色块
+        #     # -------------------------
+        #     # lap = cv2.Laplacian(cv2.cvtColor(final, cv2.COLOR_BGR2GRAY), cv2.CV_32F)
+        #     # mask_blocks = (np.abs(lap) < 5e-4).astype(np.uint8) * 255  # 提高阈值，减少误修复
+        #     #
+        #     # # 仅修复小面积色块
+        #     # if mask_blocks.sum() < 0.05 * mask_blocks.size:
+        #     #     final = cv2.inpaint(final, mask_blocks, 3, cv2.INPAINT_TELEA)
+        #
+        #     # 转回 torch.Tensor
+        #     final_tensor = torch.from_numpy(final).float().permute(2, 0, 1) / 255.0
+        #     enhanced_list.append(final_tensor)
+        #
+        # enhanced_pred = torch.stack(enhanced_list, dim=0)
+
+        return pred, enhanced_pred
         
     def normalize(self, x, reverse=False):
         if not reverse:
@@ -193,11 +358,12 @@ class LitADenoising(LitDenoising):
         x, y = self.get_input(batch, val_config, norm_data=False)
         # assert x.shape[0] == 1
 
-        pred = self(x, adaptive_iter=self.misc_config.adaptive_iteration, 
-                    max_iter=self.misc_config.max_iteration,
-                    alpha_schedule=self.misc_config.get('alpha_schedule'))
+        pred, enhanced_pred = self(x, adaptive_iter=self.misc_config.adaptive_iteration,
+                                    max_iter=self.misc_config.max_iteration,
+                                    alpha_schedule=self.misc_config.get('alpha_schedule'))
         
         pred = torch.clamp(pred, 0.0, 1.0)
+        enhanced_pred = torch.clamp(enhanced_pred, 0.0, 1.0)
 
         # Evaluate metrics.
         losses = {}
@@ -234,6 +400,7 @@ class LitADenoising(LitDenoising):
                 self.sampled_images.append(x[i].cpu())
                 # self.sampled_images.append(y[i].cpu())
                 self.sampled_images.append(pred[i].cpu())
+                self.sampled_images.append(enhanced_pred[i].cpu())
 
                 row = make_grid(self.sampled_images, nrow=len(self.sampled_images))
                 self.log_image("sampled_images", row, batch_idx, sample_id=i)

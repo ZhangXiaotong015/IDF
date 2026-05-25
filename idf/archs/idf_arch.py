@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from typing import Optional, Tuple, List
 
+
 # -------------------------
 # Normalization
 # -------------------------
@@ -256,6 +257,40 @@ class DIDBlock(nn.Module):
         else:
             return out, x_in - out, self.last_kernels.clone()
 
+
+class RCAB(nn.Module):
+    """
+    Residual Channel Attention Block
+    """
+    def __init__(self, num_channels, reduction=16):
+        super(RCAB, self).__init__()
+        self.conv1 = nn.Conv2d(num_channels, num_channels, kernel_size=3, padding=1)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(num_channels, num_channels, kernel_size=3, padding=1)
+
+        reduced_channels = max(1, num_channels // reduction)
+        self.fc1 = nn.Conv2d(num_channels, reduced_channels, kernel_size=1, padding=0)
+        self.fc2 = nn.Conv2d(reduced_channels, num_channels, kernel_size=1, padding=0)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        # 残差分支
+        res = self.conv1(x)
+        res = self.relu(res)
+        res = self.conv2(res)
+
+        # 通道注意力
+        w = F.adaptive_avg_pool2d(res, 1)   # 全局平均池化
+        w = self.fc1(w)
+        w = self.relu(w)
+        w = self.fc2(w)
+        w = self.sigmoid(w)
+
+        # 加权并残差连接
+        out = res * w + x
+        return out
+
+
 class IDFNet(nn.Module):
     """Iterative Dynamic Filtering (IDF) Network.
 
@@ -288,13 +323,21 @@ class IDFNet(nn.Module):
             unfold_dilation=2,
             **block_kwargs,
         )
+        self.rcab = RCAB(num_channels=num_channels)
+
+        self.tissue_branch = nn.Sequential(
+            nn.Conv2d(num_channels, hidden_channels, 3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(hidden_channels, num_channels, 3, padding=1),
+            nn.Sigmoid()
+        )
 
     def forward(
-        self,
-        x: torch.Tensor,
-        adaptive_iter: bool = False,
-        max_iter: Optional[int] = None,
-        alpha_schedule: Optional[List[float]] = None,
+            self,
+            x: torch.Tensor,
+            adaptive_iter: bool = False,
+            max_iter: Optional[int] = None,
+            alpha_schedule: Optional[List[float]] = None,
     ) -> torch.Tensor:
         """Run iterative dynamic filtering.
 
@@ -316,6 +359,25 @@ class IDFNet(nn.Module):
         for i in range(max_iter):
             mix_alpha = alpha_schedule[i] if alpha_schedule is not None else None
             output = self.block(output, use_dilation=(i % 2 == 0), mix_alpha=mix_alpha)
+
+            # 假设 output[0] 是图像张量
+            out_img = output[0]
+
+            # RCAB增强
+            out_img = self.rcab(out_img)
+
+            # 软组织亮度分支
+            tissue_mask = self.tissue_branch(out_img)
+            tissue_mask = torch.clamp(tissue_mask, 0, 0.6)  # 限制最大激活
+
+            # 融合公式：保持原图层次，只轻度提升亮度
+            coef = 0.3  # 融合系数，可调
+            global_mean = out_img.mean(dim=(2, 3), keepdim=True)
+            out_img = out_img * (1 - coef * tissue_mask) + coef * tissue_mask * global_mean
+
+            output = (out_img, output[1], output[2])
+
+            # 自适应迭代提前停止
             if adaptive_iter and i % 2 == 1 and i > 1:
                 loss = self._compute_adaptive_loss(self.block)
                 if loss < self.halt_threshold:

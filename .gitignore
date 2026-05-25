@@ -210,5 +210,9 @@ __marimo__/
 logs
 LocalImageLogger
 
+demo.py
+dicom_denoise_pipeline.py
+run_vedio.sh
+
 @eaDir
 thumbs.db

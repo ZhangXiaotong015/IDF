@@ -446,6 +446,8 @@ class CFM_valid_unpaired(Dataset) :
             clean = np.array(Image.open(self.GT_dir[index]).convert("RGB"))
 
         h, w, _ = clean.shape
+        if self.patch_size!=h:
+            self.patch_size = h
         rnd_h = random.randint(0, max(0, h - self.patch_size))
         rnd_w = random.randint(0, max(0, w - self.patch_size))
         clean_patch = clean[rnd_h:rnd_h + self.patch_size, rnd_w:rnd_w + self.patch_size, :]

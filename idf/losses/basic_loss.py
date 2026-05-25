@@ -629,14 +629,14 @@ class FinalLossV3(nn.Module):  # Guidewire Version
 class FinalLossV3Plus(nn.Module):  # Guidewire Contrast Version
     def __init__(
         self,
-        grad_weight=0.2,
+        grad_weight=0.25,
         tv_weight=3e-5,
-        frangi_weight=1e-3,
-        brightness_weight=0.01,
+        frangi_weight=1.5e-3,
+        brightness_weight=0.02,
         pseudo_sigma=1.0,
         decay_tau=3000,
         guidewire_dark_weight=0.15,   # 提高权重
-        guidewire_consistency_weight=0.05,  # 新增结构一致性项
+        guidewire_consistency_weight=0.08,  # 新增结构一致性项
     ):
         super().__init__()
 
@@ -653,7 +653,7 @@ class FinalLossV3Plus(nn.Module):  # Guidewire Contrast Version
         self.guidewire_consistency_weight = guidewire_consistency_weight
 
 
-    def detect_guidewire(self, noisy):
+    def detect_guidewire_old(self, noisy):
         # noisy: [B,3,H,W] → 转灰度
         if noisy.shape[1] == 3:
             img = noisy.mean(dim=1, keepdim=True).detach()
@@ -670,6 +670,22 @@ class FinalLossV3Plus(nn.Module):  # Guidewire Contrast Version
         mask = F.max_pool2d(mask, kernel_size=5, stride=1, padding=2)  # 扩展导丝区域
         return mask
 
+    def detect_guidewire(self, noisy):
+        if noisy.shape[1] == 3:
+            img = noisy.mean(dim=1, keepdim=True).detach()
+        else:
+            img = noisy.detach()
+
+        R_line = hessian_line_filter(img, sigmas=[0.8, 1.2, 1.6])
+        R_ori = orientation_consistency(img)
+
+        R = R_line * R_ori
+        R = R / (R.max() + 1e-6)
+
+        threshold = R.mean() + 0.5 * R.std()  # 动态阈值
+        mask = (R > threshold).float()
+        mask = F.max_pool2d(mask, kernel_size=5, stride=1, padding=2)
+        return mask
 
     def forward(self, pred, pseudo_gt, noisy, step):
         pseudo_gt_smooth = gaussian_blur(pseudo_gt, sigma=self.pseudo_sigma)
@@ -699,6 +715,109 @@ class FinalLossV3Plus(nn.Module):  # Guidewire Contrast Version
         # ---------------------------
         loss = L_main + L_grad + L_frangi + L_brightness + L_tv + L_dark + L_consistency
         return loss
+
+class FinalLossV3PlusPlus(nn.Module):  # Guidewire Contrast Version
+    def __init__(
+        self,
+        grad_weight=0.25,
+        tv_weight=3e-5,
+        frangi_weight=1.5e-3,
+        brightness_weight=0.02,
+        pseudo_sigma=1.0,
+        decay_tau=3000,
+        guidewire_dark_weight=0.15,   # 提高权重
+        guidewire_consistency_weight=0.08,  # 新增结构一致性项
+        tissue_bright_weight=0.02
+    ):
+        super().__init__()
+
+        self.charbonnier = CharbonnierLoss()
+        self.grad_loss = GradientLoss(loss_weight=grad_weight)
+        self.frangi_loss = FrangiLoss(loss_weight=frangi_weight)
+        self.brightness_loss = MeanStdLoss(loss_weight=brightness_weight)
+        self.tv = WeightedTVLoss()
+
+        self.tv_weight = tv_weight
+        self.pseudo_sigma = pseudo_sigma
+        self.decay_tau = decay_tau
+        self.guidewire_dark_weight = guidewire_dark_weight
+        self.guidewire_consistency_weight = guidewire_consistency_weight
+        self.tissue_bright_weight = tissue_bright_weight
+
+    def detect_guidewire(self, noisy):
+        if noisy.shape[1] == 3:
+            img = noisy.mean(dim=1, keepdim=True).detach()
+        else:
+            img = noisy.detach()
+
+        R_line = hessian_line_filter(img, sigmas=[0.8, 1.2, 1.6])
+        R_ori = orientation_consistency(img)
+
+        R = R_line * R_ori
+        R = R / (R.max() + 1e-6)
+
+        threshold = R.mean() + 0.5 * R.std()  # 动态阈值
+        mask = (R > threshold).float()
+        mask = F.max_pool2d(mask, kernel_size=5, stride=1, padding=2)
+        return mask
+
+    def forward(self, pred, pseudo_gt, noisy, step):
+
+        # 1. 平滑伪GT，避免高频噪声
+        pseudo_gt_smooth = gaussian_blur(pseudo_gt, sigma=self.pseudo_sigma)
+
+        # 2. 动态权重：训练初期更依赖伪GT，后期逐渐减弱
+        w = torch.exp(torch.tensor(-step / self.decay_tau, device=pred.device))
+
+        # 3. 基础损失
+        L_main = w * self.charbonnier(pred, pseudo_gt_smooth)
+        L_grad = self.grad_loss(pred, pseudo_gt_smooth)
+        L_frangi = self.frangi_loss(pred, pseudo_gt_smooth)
+        L_brightness = self.brightness_loss(pred, pseudo_gt_smooth)
+
+        # 4. TV约束（残差平滑）
+        residual = pred - noisy
+        L_tv = self.tv(residual) * self.tv_weight
+
+        # ---------------------------
+        # 导丝增强部分
+        # ---------------------------
+        guidewire_mask = self.detect_guidewire(noisy)
+
+        # 导丝区域比背景更暗
+        L_dark = ((pred * guidewire_mask).mean() - (
+                    pred * (1 - guidewire_mask)).mean()) * self.guidewire_dark_weight
+
+        # 导丝区域保持与伪GT一致
+        L_consistency = F.l1_loss(pred * guidewire_mask,
+                                  pseudo_gt_smooth * guidewire_mask) * self.guidewire_consistency_weight
+
+        # ---------------------------
+        # 软组织亮度抑制部分
+        # ---------------------------
+        # Frangi 响应 → 血管/骨骼掩膜
+        vessel_response = self.frangi_loss.frangi_response(noisy)
+        vessel_response = vessel_response / (vessel_response.max() + 1e-6)
+        vessel_mask = (vessel_response > 0.2).float()
+        vessel_mask = F.interpolate(vessel_mask, size=pred.shape[-2:], mode='nearest')
+
+        # 软组织掩膜 = 全图 - 导丝 - 血管/骨骼
+        tissue_mask = 1 - torch.clamp(guidewire_mask + vessel_mask, 0, 1)
+
+        # 亮度约束：软组织亮度接近全局中位数
+        mean_tissue = (pred * tissue_mask).mean()
+        median_global = pred.median()
+        L_tissue_balance = torch.abs(mean_tissue - median_global) * self.tissue_bright_weight
+
+        # ---------------------------
+        # 总 loss
+        # ---------------------------
+        loss = (
+                L_main + L_grad + L_frangi + L_brightness + L_tv +
+                L_dark + L_consistency + L_tissue_balance
+        )
+        return loss
+
 
 class FinalLossV4(nn.Module):
     def __init__(
