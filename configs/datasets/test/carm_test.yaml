@@ -1,7 +1,7 @@
 dataset:
   target: idf.datasets.carm_dataset.CFM_test   # Dataset class handling paired GT / LQ folders.
   params:
-    dataroot: /data/test_set_50    # Root directory containing subfolders for GT and LQ images.
+    dataroot: /data/test_set_jpg_round2    # Root directory containing subfolders for GT and LQ images.
 
     patch_size: ~                                   # Use full-resolution images; set integer to enable center/random cropping.
     test: True                                       # Disable training-only randomizations.
