@@ -85,7 +85,16 @@ def process_directory(root_dir, output_root):
                 convert_dicom(input_path, output_dir, filename)
 
 if __name__ == "__main__":
-    input_dir = "/home/AIhack3-1/data/test_set_round2"
-    output_dir = "/home/AIhack3-1/data/test_set_jpg_round2"
-    process_directory(input_dir, output_dir)
+    # 1. 创建参数解析器
+    parser = argparse.ArgumentParser(description="将 DICOM 转换为 JPG 格式的脚本")
+
+    # 2. 添加参数（设置了默认值，如果你不传参数，就会使用默认值）
+    parser.add_argument('--input_dir', type=str, default="/data/test_set_round2", help='输入文件夹路径')
+    parser.add_argument('--output_dir', type=str, default="/data/test_set_jpg_round2", help='输出文件夹路径')
+
+    # 3. 解析参数
+    args = parser.parse_args()
+
+    # 4. 传入函数执行
+    process_directory(args.input_dir, args.output_dir)
 
