@@ -432,7 +432,7 @@ class LitADenoising(LitDenoising):
         save_dir = "/scratch/IDF/logs/LocalImageLogger/Team1_Results_Round2"
         os.makedirs(save_dir, exist_ok=True)
 
-        save_path = os.path.join(save_dir, file_name.replace('.jpg','_T1.jpg'))
+        save_path = os.path.join(save_dir, file_name.split('_')[0], file_name.replace('.jpg','_T1.jpg'))
 
         vutils.save_image(pred, save_path)
 
