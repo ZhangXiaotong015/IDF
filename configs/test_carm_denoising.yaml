@@ -2,7 +2,7 @@ data:
   target: idf.datasets.data_module.BaseDataModule
   params:
     # Path to training dataset configuration.
-    train_config: configs/datasets/train/carm_train_paired.yaml
+    train_config: configs/datasets/train/carm_train_unpaired.yaml
 
     # List of validation dataset configuration files. Add or remove as needed.
     # Match entries in data_config/validate of configs/models/idfnet.yaml

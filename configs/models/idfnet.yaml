@@ -22,13 +22,17 @@ params:
 #       unpaired_siteJPG:
 #         input_key: LQ
 #         target_key: GT
-       unpaired_filtered_cardiac_neuro:
-         input_key: LQ
-         target_key: GT
+#       unpaired_filtered_cardiac_neuro:
+#         input_key: LQ
+#         target_key: GT
 #      test_set_jpg:
 #        input_key: LQ
 #        target_key: GT
 #        filename_key: file_name
+      test_set_jpg_round2:
+        input_key: LQ
+        target_key: GT
+        filename_key: file_name
 
     norm:                      # Data normalization.
       mu_data: 0.0
