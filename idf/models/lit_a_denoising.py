@@ -348,8 +348,8 @@ class LitADenoising(LitDenoising):
     def validation_step(self, batch, batch_idx, dataloader_idx=0):
         val_name = self.val_dataset_names[dataloader_idx]
         val_config = self.data_config.validate[val_name]
-        self._validation_step(batch, batch_idx, val_config, suffix=f"_{val_name}")
-        # self._test_step(batch, batch_idx, val_config, suffix=f"_{val_name}")
+        # self._validation_step(batch, batch_idx, val_config, suffix=f"_{val_name}")
+        self._test_step(batch, batch_idx, val_config, suffix=f"_{val_name}")
 
     def on_validation_end(self):
         pass
@@ -429,7 +429,7 @@ class LitADenoising(LitDenoising):
         print(f"Inference time: {end-start:.4f} seconds")
         pred = torch.clamp(pred, 0.0, 1.0) # (1,3,H,W)
 
-        save_dir = "/scratch/IDF/logs/LocalImageLogger/Team1_Results"
+        save_dir = "/scratch/IDF/logs/LocalImageLogger/Team1_Results_Round2"
         os.makedirs(save_dir, exist_ok=True)
 
         save_path = os.path.join(save_dir, file_name.replace('.jpg','_T1.jpg'))
