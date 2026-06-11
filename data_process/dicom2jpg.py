@@ -3,6 +3,7 @@ import pydicom
 import numpy as np
 import matplotlib.pyplot as plt
 from pydicom.multival import MultiValue
+import argparse
 
 def apply_window(image, window_center, window_width):
     """应用窗宽窗位到像素值"""
