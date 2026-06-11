@@ -85,7 +85,7 @@ def process_directory(root_dir, output_root):
                 convert_dicom(input_path, output_dir, filename)
 
 if __name__ == "__main__":
-    site_dir = "/mnt/c/Users/250024095/Projects/3rd STO AI Hackathon/Site/4.26/DICOMDIS_20260423_3例肝胆手术"
-    output_dir = "/mnt/c/Users/250024095/Projects/3rd STO AI Hackathon/Site_JPG/4.26/DICOMDIS_20260423_3例肝胆手术"
-    process_directory(site_dir, output_dir)
+    input_dir = "/home/AIhack3-1/data/test_set_round2"
+    output_dir = "/home/AIhack3-1/data/test_set_jpg_round2"
+    process_directory(input_dir, output_dir)
 
