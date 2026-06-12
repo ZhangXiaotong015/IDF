@@ -424,12 +424,12 @@ class LitADenoising(LitDenoising):
         start = time.perf_counter()
         pred = self(x, adaptive_iter=self.misc_config.adaptive_iteration,
                     max_iter=self.misc_config.max_iteration,
-                    alpha_schedule=self.misc_config.get('alpha_schedule'))[0]#[1]
+                    alpha_schedule=self.misc_config.get('alpha_schedule'))[1]
         end = time.perf_counter()
         print(f"Inference time: {end-start:.4f} seconds")
         pred = torch.clamp(pred, 0.0, 1.0) # (1,3,H,W)
 
-        save_dir = "/scratch/IDF/logs/LocalImageLogger/Team1_Results_Round2_final" #"/scratch/IDF/logs/LocalImageLogger/Team1_Results_Round2"
+        save_dir = "/scratch/IDF/logs/LocalImageLogger/Team1_Results_Round2"
         os.makedirs(os.path.join(save_dir, file_name.split('_')[0]), exist_ok=True)
 
         save_path = os.path.join(save_dir, file_name.split('_')[0], file_name.replace('.jpg','_T1.jpg'))
