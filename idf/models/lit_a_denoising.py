@@ -429,7 +429,7 @@ class LitADenoising(LitDenoising):
         print(f"Inference time: {end-start:.4f} seconds")
         pred = torch.clamp(pred, 0.0, 1.0) # (1,3,H,W)
 
-        save_dir = "/scratch/IDF/logs/LocalImageLogger/Team1_Results_Round2"
+        save_dir = "/scratch/IDF/logs/LocalImageLogger/Team1_Results_Round2_final" #"/scratch/IDF/logs/LocalImageLogger/Team1_Results_Round2"
         os.makedirs(os.path.join(save_dir, file_name.split('_')[0]), exist_ok=True)
 
         save_path = os.path.join(save_dir, file_name.split('_')[0], file_name.replace('.jpg','_T1.jpg'))
