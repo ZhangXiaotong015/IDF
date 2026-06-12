@@ -49,7 +49,7 @@ def create_multiframe_dicom(frames, output_path):
     pixel_data = np.stack(frames, axis=0).astype(np.uint8)
     ds.PixelData = pixel_data.tobytes()
 
-    ds.fix_meta_info()
+    ds.ensure_file_meta()
 
     ds.save_as(output_path, write_like_original=False)
 
@@ -63,7 +63,7 @@ def process_directory(input_root, output_root):
 
         # 找到所有 PNG
         png_files = sorted(
-            [f for f in filenames if f.lower().endswith(".png")],
+            [f for f in filenames if f.lower().endswith(".jpg")],
             key=lambda x: int(''.join(filter(str.isdigit, x)) or 0)  # 按数字排序
         )
 
@@ -81,7 +81,7 @@ def process_directory(input_root, output_root):
         output_dir = os.path.join(output_root, relative)
         os.makedirs(output_dir, exist_ok=True)
 
-        dicom_name = os.path.basename(dirpath) + ".dcm"
+        dicom_name = os.path.basename(dirpath) + "_T1_Round2.dcm"
         output_path = os.path.join(output_dir, dicom_name)
 
         create_multiframe_dicom(frames, output_path)

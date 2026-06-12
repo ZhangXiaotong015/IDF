@@ -207,8 +207,9 @@ marimo/_lsp/
 __marimo__/
 
 # logger files
-logs
-LocalImageLogger
+logs/
+LocalImageLogger/
+dicom_output/
 
 #demo.py
 #dicom_denoise_pipeline.py
